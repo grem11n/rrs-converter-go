@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
+	"log"
 	"os/user"
 	"sync"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 // Attrs store user-defined parameters
@@ -22,52 +23,21 @@ type Attrs struct {
 	Concurrency int
 }
 
-// Get user-defined parameters from CLI. Also, this function provides
-// some verbose output, for example, if bucket was not specified
-func getArgs() *Attrs {
-	var region, config string
-	regionPtr := flag.String("region", "", "Defines region")
-	bucketPtr := flag.String("bucket", "", "Defines bucket. default = empty")
-	configPtr := flag.String("config", "", "Allow changing AWS account")
-	sectionPtr := flag.String("section", "default", "Which part of AWS credentials to use")
-	concurrencyPtr := flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
-	flag.Parse()
-	if *bucketPtr == "" {
-		fmt.Println("You haven't define bucket! Please, do it with -bucket= ")
-		os.Exit(1)
-	}
-	if *regionPtr == "" {
-		region = "us-east-1"
-		fmt.Println("You haven't specified region. Default region will be us-east-1")
-	} else {
-		region = *regionPtr
-	}
-	if *configPtr == "" {
-		usr, err := user.Current()
-		if err != nil {
-			panic(err)
-		}
-		config = usr.HomeDir + "/.aws/credentials"
-	} else {
-		config = *configPtr
-	}
-	attrs := Attrs{
-		Region:      region,
-		Bucket:      *bucketPtr,
-		Config:      config,
-		Section:     *sectionPtr,
-		Concurrency: *concurrencyPtr,
-	}
-	return &attrs
-}
+// Get user-defined parameters from CLI
+var (
+	regionPtr      = flag.String("region", "", "Defines region")
+	bucketPtr      = flag.String("bucket", "", "Defines bucket. default = empty")
+	configPtr      = flag.String("config", "", "Allow changing AWS account")
+	sectionPtr     = flag.String("section", "default", "Which part of AWS credentials to use")
+	concurrencyPtr = flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
+)
 
-func main() {
-	attrs := getArgs()
+func convert(attrs Attrs) {
 	creds := credentials.NewSharedCredentials(attrs.Config, attrs.Section)
 	_, err := creds.Get()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
+		return
 	}
 	// Create new connection to S3
 	svc := s3.New(session.New(), &aws.Config{
@@ -86,6 +56,7 @@ func main() {
 
 	// Loop trough the objects in the bucket and create a copy
 	// of each object with the REDUCED_REDUNDANCY storage class
+	bar := pb.StartNew(len(resp.Contents))
 	for _, key := range resp.Contents {
 		if *key.StorageClass != "REDUCED_REDUNDANCY" {
 			throttle <- 1
@@ -100,18 +71,53 @@ func main() {
 				}
 				_, err := svc.CopyObject(copyParams)
 				if err != nil {
-					panic(err)
+					log.Fatal(err)
 				}
-				fmt.Print(".")
+
 				<-throttle
 			}()
 			wg.Wait()
 		}
+		bar.Increment()
 	}
-
+	bar.FinishPrint("Conversion done!")
 	// Fill the channel to be sure, that all goroutines finished
 	for i := 0; i < cap(throttle); i++ {
 		throttle <- 1
 	}
-	fmt.Println("\nConversion done!")
+}
+
+func main() {
+	var region, config string
+	// Parsing arguments
+	flag.Parse()
+	if *bucketPtr == "" {
+		log.Fatal("You haven't define bucket! Please, do it with -bucket= ")
+		return
+	}
+	if *regionPtr == "" {
+		region = "us-east-1"
+		fmt.Println("You haven't specified region. Default region will be us-east-1")
+	} else {
+		region = *regionPtr
+	}
+	if *configPtr == "" {
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		config = usr.HomeDir + "/.aws/credentials"
+	} else {
+		config = *configPtr
+	}
+	attrs := Attrs{
+		Region:      region,
+		Bucket:      *bucketPtr,
+		Config:      config,
+		Section:     *sectionPtr,
+		Concurrency: *concurrencyPtr,
+	}
+
+	convert(attrs)
 }
