@@ -57,16 +57,16 @@ func convert(attrs Attrs) {
 	// Loop trough the objects in the bucket and create a copy
 	// of each object with the REDUCED_REDUNDANCY storage class
 	bar := pb.StartNew(len(resp.Contents))
-	for _, key := range resp.Contents {
-		if *key.StorageClass != "REDUCED_REDUNDANCY" {
+	for _, content := range resp.Contents {
+		if *content.StorageClass != "REDUCED_REDUNDANCY" {
 			throttle <- 1
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				copyParams := &s3.CopyObjectInput{
 					Bucket:       aws.String(attrs.Bucket),
-					CopySource:   aws.String(attrs.Bucket + "/" + *key.Key),
-					Key:          aws.String(*key.Key),
+					CopySource:   aws.String(attrs.Bucket + "/" + *content.Key),
+					Key:          aws.String(*content.Key),
 					StorageClass: aws.String("REDUCED_REDUNDANCY"),
 				}
 				_, err := svc.CopyObject(copyParams)
