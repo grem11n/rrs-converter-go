@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-// Attrs store parameters, which script use
+// Attrs store user-defined parameters
 type Attrs struct {
 	Region      string
 	Bucket      string
@@ -22,6 +22,8 @@ type Attrs struct {
 	Concurrency int
 }
 
+// Get user-defined parameters from CLI. Also, this function provides
+// some verbose output, for example, if bucket was not specified
 func getArgs() *Attrs {
 	var region, config string
 	regionPtr := flag.String("region", "", "Defines region")
@@ -59,10 +61,6 @@ func getArgs() *Attrs {
 	return &attrs
 }
 
-func copy(attrs, object string) {
-
-}
-
 func main() {
 	attrs := getArgs()
 	creds := credentials.NewSharedCredentials(attrs.Config, attrs.Section)
@@ -71,6 +69,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	// Create new connection to S3
 	svc := s3.New(session.New(), &aws.Config{
 		Region:      aws.String(attrs.Region),
 		Credentials: creds,
@@ -81,8 +80,12 @@ func main() {
 	resp, _ := svc.ListObjects(params)
 	fmt.Print(len(resp.Contents), " objects in the bucket.\n Processing... It could take a while...")
 
+	// This is used to limit simultaneous goroutines
 	throttle := make(chan int, attrs.Concurrency)
 	var wg sync.WaitGroup
+
+	// Loop trough the objects in the bucket and create a copy
+	// of each object with the REDUCED_REDUNDANCY storage class
 	for _, key := range resp.Contents {
 		if *key.StorageClass != "REDUCED_REDUNDANCY" {
 			throttle <- 1
@@ -105,6 +108,8 @@ func main() {
 			wg.Wait()
 		}
 	}
+
+	// Fill the channel to be sure, that all goroutines finished
 	for i := 0; i < cap(throttle); i++ {
 		throttle <- 1
 	}
