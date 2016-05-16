@@ -4,29 +4,31 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sync"
 	"os/user"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
+
+// Attrs store parameters, which script use
 type Attrs struct {
-	Region     string
-	Bucket     string
-	Config     string
-	Section    string
-	Concurancy int
+	Region      string
+	Bucket      string
+	Config      string
+	Section     string
+	Concurrency int
 }
 
 func getArgs() *Attrs {
 	var region, config string
 	regionPtr := flag.String("region", "", "Defines region")
 	bucketPtr := flag.String("bucket", "", "Defines bucket. default = empty")
-	configPtr := flag.String("creds", "", "Allow changing AWS account")
+	configPtr := flag.String("config", "", "Allow changing AWS account")
 	sectionPtr := flag.String("section", "default", "Which part of AWS credentials to use")
-	concurancyPtr := flag.Int("concurancy", 10, "Set up maximum concurancy for this task. Default is 10")
+	concurrencyPtr := flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
 	flag.Parse()
 	if *bucketPtr == "" {
 		fmt.Println("You haven't define bucket! Please, do it with -bucket= ")
@@ -34,7 +36,7 @@ func getArgs() *Attrs {
 	}
 	if *regionPtr == "" {
 		region = "us-east-1"
-		fmt.Println("You haven't specified region. Default region will be us-east-1\n")
+		fmt.Println("You haven't specified region. Default region will be us-east-1")
 	} else {
 		region = *regionPtr
 	}
@@ -47,12 +49,12 @@ func getArgs() *Attrs {
 	} else {
 		config = *configPtr
 	}
-	attrs := Attrs {
-	Region:     region,
-	Bucket:     *bucketPtr,
-	Config:     config,
-	Section:    *sectionPtr,
-	Concurancy: *concurancyPtr,
+	attrs := Attrs{
+		Region:      region,
+		Bucket:      *bucketPtr,
+		Config:      config,
+		Section:     *sectionPtr,
+		Concurrency: *concurrencyPtr,
 	}
 	return &attrs
 }
@@ -77,10 +79,10 @@ func main() {
 		Bucket: aws.String(attrs.Bucket),
 	}
 	resp, _ := svc.ListObjects(params)
-	fmt.Println("Found ", len(resp.Contents), " objects.\n Processing... It could take a while...")
+	fmt.Print(len(resp.Contents), " objects in the bucket.\n Processing... It could take a while...")
 
-	throttle := make(chan int, attrs.Concurancy)
-  var wg sync.WaitGroup
+	throttle := make(chan int, attrs.Concurrency)
+	var wg sync.WaitGroup
 	for _, key := range resp.Contents {
 		if *key.StorageClass != "REDUCED_REDUNDANCY" {
 			throttle <- 1
@@ -88,15 +90,16 @@ func main() {
 			go func() {
 				defer wg.Done()
 				copyParams := &s3.CopyObjectInput{
-				  Bucket: aws.String(attrs.Bucket),
-				  CopySource: aws.String(attrs.Bucket + "/" + *key.Key),
-				  Key: aws.String(*key.Key),
+					Bucket:       aws.String(attrs.Bucket),
+					CopySource:   aws.String(attrs.Bucket + "/" + *key.Key),
+					Key:          aws.String(*key.Key),
 					StorageClass: aws.String("REDUCED_REDUNDANCY"),
-			  }
+				}
 				_, err := svc.CopyObject(copyParams)
 				if err != nil {
 					panic(err)
 				}
+				fmt.Print(".")
 				<-throttle
 			}()
 			wg.Wait()
@@ -105,4 +108,5 @@ func main() {
 	for i := 0; i < cap(throttle); i++ {
 		throttle <- 1
 	}
+	fmt.Println("\nConversion done!")
 }
