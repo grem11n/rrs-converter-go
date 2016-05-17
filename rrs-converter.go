@@ -49,7 +49,7 @@ func convert(attrs Attrs) {
 		Bucket: aws.String(attrs.Bucket),
 	}
 	resp, _ := svc.ListObjects(params)
-	fmt.Print(len(resp.Contents), " objects in the bucket.\n Processing... It could take a while...")
+	fmt.Println(len(resp.Contents), " objects in the bucket.")
 
 	// This is used to limit simultaneous goroutines
 	throttle := make(chan int, attrs.Concurrency)
@@ -81,7 +81,7 @@ func convert(attrs Attrs) {
 		}
 		bar.Increment()
 	}
-	bar.FinishPrint("Convertion done!")
+	bar.FinishPrint("Done!")
 	// Fill the channel to be sure, that all goroutines finished
 	for i := 0; i < cap(throttle); i++ {
 		throttle <- 1
