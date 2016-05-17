@@ -26,8 +26,8 @@ type Attrs struct {
 
 // Get user-defined parameters from CLI
 var (
+	bucketPtr      = flag.String("bucket", "", "Defines bucket. This is a mandatory paramenter!")
 	regionPtr      = flag.String("region", "", "Defines region")
-	bucketPtr      = flag.String("bucket", "", "Defines bucket. default = empty")
 	configPtr      = flag.String("config", "", "Allow changing AWS account")
 	sectionPtr     = flag.String("section", "default", "Which part of AWS credentials to use")
 	concurrencyPtr = flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
@@ -94,7 +94,9 @@ func main() {
 	// Parsing arguments
 	flag.Parse()
 	if *bucketPtr == "" {
-		log.Fatal("You haven't define bucket! Please, do it with -bucket= ")
+		fmt.Println("You haven't define bucket! Please, do it with -bucket= \n Script usage:")
+		flag.PrintDefaults()
+		log.Fatal("Bucket not specified")
 		return
 	}
 	if *regionPtr == "" {
