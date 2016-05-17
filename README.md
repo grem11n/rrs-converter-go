@@ -8,7 +8,12 @@ and some magic of goroutines to convert all objects in S3 bucket to RRD-storage 
 [AWS CLI](http://www.developmentshack.com/amazon-s3-command-line-optionstipstricks/42).
 
 ### Build and install
+##### Dependencies:
+- [AWS-sdk](https://github.com/aws/aws-sdk-go)
+- [Terminal progress bar for Go](https://github.com/cheggaaa/pb)
 
+
+##### Installation:
 Script is written in Go 1.6. Installation:
 ```
 $ git clone https://github.com/grem11n/rrs-converter-go.git
@@ -31,3 +36,7 @@ $ go build rrs-converter.go
 ```
 rrs-converter.go -bucket=my-bucket -config="/home/user/.aws/credentials" -region=eu-west-1 -section=test -maxcon=5
 ```
+
+### TODO:
+
+- [ ] Fix logging for converter func
