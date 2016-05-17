@@ -15,8 +15,8 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
-// Attrs store user-defined parameters
-type Attrs struct {
+// attrs store user-defined parameters
+type attrs struct {
 	Region      string
 	Bucket      string
 	Config      string
@@ -33,7 +33,7 @@ var (
 	concurrencyPtr = flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
 )
 
-func convert(attrs Attrs) {
+func convert(attrs attrs) {
 	creds := credentials.NewSharedCredentials(attrs.Config, attrs.Section)
 	_, err := creds.Get()
 	if err != nil {
@@ -115,7 +115,7 @@ func main() {
 	} else {
 		config = *configPtr
 	}
-	attrs := Attrs{
+	attrs := attrs{
 		Region:      region,
 		Bucket:      *bucketPtr,
 		Config:      config,
