@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/user"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -80,7 +81,7 @@ func convert(attrs Attrs) {
 		}
 		bar.Increment()
 	}
-	bar.FinishPrint("Conversion done!")
+	bar.FinishPrint("Convertion done!")
 	// Fill the channel to be sure, that all goroutines finished
 	for i := 0; i < cap(throttle); i++ {
 		throttle <- 1
@@ -88,6 +89,7 @@ func convert(attrs Attrs) {
 }
 
 func main() {
+	start := time.Now()
 	var region, config string
 	// Parsing arguments
 	flag.Parse()
@@ -120,4 +122,6 @@ func main() {
 	}
 
 	convert(attrs)
+	elapsed := time.Since(start)
+	log.Printf("Convertion took: %s", elapsed)
 }
