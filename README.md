@@ -16,6 +16,8 @@ and some magic of goroutines to convert all objects in S3 bucket to RRD-storage 
 
 ##### Installation:
 Script is written in Go 1.6. Installation:
+
+[Install Go](https://golang.org/doc/install) and dependencies, then do:
 ```
 $ git clone https://github.com/grem11n/rrs-converter-go.git
 $ go build rrs-converter.go
