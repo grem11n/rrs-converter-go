@@ -9,8 +9,9 @@ and some magic of goroutines to convert all objects in S3 bucket to RRD-storage 
 
 ### Build and install
 ##### Dependencies:
-- [AWS-sdk](https://github.com/aws/aws-sdk-go)
-- [Terminal progress bar for Go](https://github.com/cheggaaa/pb)
+- [aws-sdk-go](https://github.com/aws/aws-sdk-go)
+- [cheggaaa/pb](https://github.com/cheggaaa/pb)
+- [fatih/color](https://github.com/fatih/color)
 
 
 ##### Installation:
@@ -37,6 +38,6 @@ $ go build rrs-converter.go
 rrs-converter.go -bucket=my-bucket -config="/home/user/.aws/credentials" -region=eu-west-1 -section=test -maxcon=5
 ```
 
-### TODO:
+### Known issues:
 
-- [ ] Fix logging for converter func
+- If there is >= 1000 objects in the bucket, script will still output "1000" as a amount of objects. I assume this relates to AWS output, but I don't dig deeper into it
