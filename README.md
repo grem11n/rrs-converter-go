@@ -42,4 +42,4 @@ rrs-converter.go -bucket=my-bucket -config="/home/user/.aws/credentials" -region
 
 ### Known issues:
 
-- If there is >= 1000 objects in the bucket, script will still output "1000" as a amount of objects. I assume this relates to AWS output, but I don't dig deeper into it
+- If there is >= 1000 objects in the bucket, script will still output "1000" as an amount of objects. I assume this relates to AWS output, but I don't dig deeper into it
