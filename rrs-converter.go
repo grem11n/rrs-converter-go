@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"sync"
 	"time"
 
@@ -133,18 +132,7 @@ func main() {
 	} else {
 		region = *regionPtr
 	}
-	if *configPtr == "" {
-		usr, err := user.Current()
-		if err != nil {
-			color.Set(color.FgRed)
-			log.Fatal(err)
-			color.Unset()
-			return
-		}
-		config = usr.HomeDir + "/.aws/credentials"
-	} else {
-		config = *configPtr
-	}
+
 	attrs := attrs{
 		Region:      region,
 		Bucket:      *bucketPtr,
