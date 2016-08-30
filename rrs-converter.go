@@ -22,6 +22,7 @@ type attrs struct {
 	Bucket      string
 	Config      string
 	Section     string
+	Type        string
 	Concurrency int
 }
 
@@ -31,9 +32,23 @@ var (
 	regionPtr      = flag.String("region", "", "Defines region")
 	configPtr      = flag.String("config", "", "Allow changing AWS account")
 	sectionPtr     = flag.String("section", "default", "Which part of AWS credentials to use")
+	typePtr        = flag.String("type", "STANDARD", "Define AWS storage class to convert to: STANDARD, REDUCED_REDUNDANCY, GLACIER. Default: STANDARD")
 	concurrencyPtr = flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
 )
 
+func checkClass(storageType string) string {
+	var class string
+	if storageType == "STANDARD" || storageType == "standard" {
+		class = "STANDARD"
+	} else if storageType == "REDUCED_REDUNDANCY" || storageType == "reduced_redundancy" {
+		class = "REDUCED_REDUNDANCY"
+	} else if storageType == "GLACIER" || storageType == "glacier" {
+		class = "GLACIER"
+	} else {
+		log.Fatal("Unknown S3 storage class!")
+	}
+	return class
+}
 func logger(bucket string, info map[string]error) {
 	f, err := os.Create(bucket + "-error.log")
 	if err != nil {
@@ -80,10 +95,10 @@ func convert(attrs attrs) map[string]error {
 	var wg sync.WaitGroup
 
 	// Loop trough the objects in the bucket and create a copy
-	// of each object with the REDUCED_REDUNDANCY storage class
+	// of each object with the storage class, you've chosen
 	bar := pb.StartNew(len(resp.Contents))
 	for _, content := range resp.Contents {
-		if *content.StorageClass != "REDUCED_REDUNDANCY" {
+		if *content.StorageClass != attrs.Type {
 			throttle <- 1
 			wg.Add(1)
 			go func() {
@@ -92,7 +107,7 @@ func convert(attrs attrs) map[string]error {
 					Bucket:       aws.String(attrs.Bucket),
 					CopySource:   aws.String(attrs.Bucket + "/" + *content.Key),
 					Key:          aws.String(*content.Key),
-					StorageClass: aws.String("REDUCED_REDUNDANCY"),
+					StorageClass: aws.String(attrs.Type),
 				}
 				_, err := svc.CopyObject(copyParams)
 				if err != nil {
@@ -132,12 +147,14 @@ func main() {
 	} else {
 		region = *regionPtr
 	}
+	storageType := checkClass(*typePtr)
 
 	attrs := attrs{
 		Region:      region,
 		Bucket:      *bucketPtr,
 		Config:      config,
 		Section:     *sectionPtr,
+		Type:        storageType,
 		Concurrency: *concurrencyPtr,
 	}
 
