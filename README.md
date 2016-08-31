@@ -1,6 +1,7 @@
 # RRS-converter Go
 
-This script allows you to simply convert AWS S3 objects to Reduce Redundancy Storage class. This is useful, if you want to safe some money.
+This script allows you to simply convert storage class of the AWS S3 objects. More information
+about AWS S3 storage classes could be found [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html).
 
 Script leverages
 [AWS-sdk](https://github.com/aws/aws-sdk-go)
@@ -33,6 +34,7 @@ $ go build rrs-converter.go
 - `-region` - bucket location. Script will use `us-east-1` by default
 - `-section` specifies which section of your AWS configuration file to use. If not specified, use "[default]"
 - `-maxcon` - number of maximum concurrent goroutines. 10 by default
+- `-type` - specifies target AWS storage class
 
 ### Example
 
