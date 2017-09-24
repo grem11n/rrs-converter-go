@@ -39,7 +39,7 @@ $ go build rrs-converter.go
 ### Example
 
 ```
-rrs-converter.go -bucket=my-bucket -config="/home/user/.aws/credentials" -region=eu-west-1 -section=test -maxcon=5
+rrs-converter -bucket=my-bucket -config="/home/user/.aws/credentials" -region=eu-west-1 -section=test -maxcon=5
 ```
 
 ### Known issues:
