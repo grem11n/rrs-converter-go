@@ -87,8 +87,17 @@ func convert(attrs attrs) map[string]error {
 	params := &s3.ListObjectsInput{
 		Bucket: aws.String(attrs.Bucket),
 	}
-	resp, _ := svc.ListObjects(params)
-	fmt.Println(len(resp.Contents), " objects in the bucket.")
+
+	var contents []*s3.Object
+	svc.ListObjectsPages(params, func(page *s3.ListObjectsOutput, isLastPage bool) bool {
+		for _, o := range page.Contents {
+			contents = append(contents, o)
+		}
+
+		return true
+	})
+
+	fmt.Println(len(contents), " objects in the bucket.")
 
 	// This is used to limit simultaneous goroutines
 	throttle := make(chan int, attrs.Concurrency)
@@ -96,8 +105,8 @@ func convert(attrs attrs) map[string]error {
 
 	// Loop trough the objects in the bucket and create a copy
 	// of each object with the storage class, you've chosen
-	bar := pb.StartNew(len(resp.Contents))
-	for _, content := range resp.Contents {
+	bar := pb.StartNew(len(contents))
+	for _, content := range contents {
 		if *content.StorageClass != attrs.Type {
 			throttle <- 1
 			wg.Add(1)
