@@ -24,6 +24,18 @@ $ git clone https://github.com/grem11n/rrs-converter-go.git
 $ go build rrs-converter.go
 ```
 
+In order to get the version:
+
+```
+git clone https://github.com/grem11n/rrs-converter-go.git
+git checkout <TAG_YOU_WANT_TO_USE>
+VERSION=$(git tag -l --points-at HEAD)
+COMMIT=$(git rev-parse --short HEAD)
+go build -ldflags "-X main.ver=${VERSION} -X main.commit=${COMMIT}"
+```
+
+If the version is not specified i.e you are not using a stable tag, output for version will be `Onbuild`
+
 ### Usage
 #### Required Parameters
 
