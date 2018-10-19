@@ -34,6 +34,9 @@ var (
 	sectionPtr     = flag.String("section", "default", "Which part of AWS credentials to use")
 	typePtr        = flag.String("type", "STANDARD", "Define AWS storage class to convert to: STANDARD, REDUCED_REDUNDANCY, GLACIER. Default: STANDARD")
 	concurrencyPtr = flag.Int("maxcon", 10, "Set up maximum concurrency for this task. Default is 10")
+	versionPtr     = flag.Bool("version", false, "Prints the version of the app")
+	ver            string
+	commit         string
 )
 
 func checkClass(storageType string) string {
@@ -142,6 +145,13 @@ func main() {
 	var region, config string
 	// Parsing arguments
 	flag.Parse()
+	if ver == "" {
+		ver = "Onbuild"
+	}
+	if *versionPtr == true {
+		fmt.Printf("Version: %s\nCommit: %s", ver, commit)
+		os.Exit(0)
+	}
 	if *bucketPtr == "" {
 		color.Set(color.FgRed)
 		fmt.Println("You haven't define bucket! Please, do it with -bucket= \n Script usage:")
