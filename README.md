@@ -1,5 +1,7 @@
 # RRS-converter Go
 
+**!!! This project is archived in favor of [S3BC](https://github.com/grem11n/s3bc) !!!**
+
 This script allows you to simply convert storage class of the AWS S3 objects. More information
 about AWS S3 storage classes could be found [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html).
 
